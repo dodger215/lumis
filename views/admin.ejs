@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUMIS Admin — Dashboard</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --gold-dim: #7a6530;
+      --bg: #070707;
+      --surface: #0d0d0d;
+      --surface2: #141414;
+      --surface3: #1a1a1a;
+      --text: #f0ede8;
+      --text-muted: #6a6560;
+      --text-dim: #2e2c2a;
+      --border: #1c1c1c;
+      --border-gold: rgba(201, 168, 76, 0.2);
+      --green: #4caf7d;
+      --red: #e05555;
+      --amber: #e0a050;
+      --blue: #5599e0;
+      --sidebar-w: 260px;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 36px 32px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+    }
+
+    .sidebar-logo-sub {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 24px 0;
+    }
+
+    .nav-section-label {
+      font-size: 0.5rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 16px 32px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 32px;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 2px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .nav-item.active {
+      color: var(--gold);
+      border-left-color: var(--gold);
+      background: rgba(201, 168, 76, 0.05);
+    }
+
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold);
+      color: var(--bg);
+      font-size: 0.5rem;
+      padding: 2px 7px;
+      font-weight: 600;
+    }
+
+    .sidebar-footer {
+      padding: 24px 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sidebar-admin {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .sidebar-admin strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 2px;
+      font-size: 0.72rem;
+    }
+
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 48px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-sm {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 20px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-sm:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-sm.gold {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-sm.gold:hover {
+      background: var(--gold);
+      color: var(--bg);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .content {
+      flex: 1;
+      padding: 48px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-gold);
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+    }
+
+    .kpi-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .kpi-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.8rem;
+      font-weight: 300;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value.gold {
+      color: var(--gold);
+    }
+
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+
+    .chart-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-weight: 300;
+      margin-bottom: 8px;
+    }
+
+    .chart-sub {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 28px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 140px;
+    }
+
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .bar {
+      width: 100%;
+      background: linear-gradient(to top, var(--gold-dim), var(--gold));
+      min-height: 4px;
+      transition: opacity 0.2s;
+    }
+
+    .bar:hover {
+      opacity: 0.7;
+    }
+
+    .donut-wrap {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .donut-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+    }
+
+    .legend-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .legend-pct {
+      font-size: 0.65rem;
+      color: var(--text);
+      margin-left: auto;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-head h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 300;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .filter-tab {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 7px 16px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-tab:hover {
+      border-color: var(--gold-dim);
+      color: var(--text);
+    }
+
+    .filter-tab.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.06);
+    }
+
+    .search-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.68rem;
+      outline: none;
+      width: 220px;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--gold-dim);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      font-size: 0.55rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: var(--surface2);
+    }
+
+    tbody td {
+      padding: 18px 16px;
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      vertical-align: middle;
+    }
+
+    .td-ref {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.9rem;
+      color: var(--gold);
+    }
+
+    .td-client strong {
+      display: block;
+      font-size: 0.72rem;
+      margin-bottom: 2px;
+    }
+
+    .td-client span {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+    }
+
+    .td-amount {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border: 1px solid;
+    }
+
+    .badge.pending {
+      color: var(--amber);
+      border-color: var(--amber);
+      background: rgba(224, 160, 80, 0.08);
+    }
+
+    .badge.confirmed {
+      color: var(--green);
+      border-color: var(--green);
+      background: rgba(76, 175, 125, 0.08);
+    }
+
+    .badge.rejected {
+      color: var(--red);
+      border-color: var(--red);
+      background: rgba(224, 85, 85, 0.08);
+    }
+
+    .badge.completed {
+      color: var(--blue);
+      border-color: var(--blue);
+      background: rgba(85, 153, 224, 0.08);
+    }
+
+    .badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .action-btn {
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .action-btn.confirm {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .action-btn.confirm:hover {
+      background: var(--green);
+      color: var(--bg);
+    }
+
+    .action-btn.reject {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .action-btn.reject:hover {
+      background: var(--red);
+      color: var(--text);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .pricing-service {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+
+    .pricing-service-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pricing-pkg {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pricing-pkg:last-child {
+      border-bottom: none;
+    }
+
+    .pricing-pkg-name {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .pricing-pkg-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      width: 100px;
+      text-align: right;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .pricing-pkg-input:focus {
+      border-color: var(--gold-dim);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border-gold);
+      width: 560px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 32px 40px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+    }
+
+    .modal-close {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .modal-body {
+      padding: 40px;
+    }
+
+    .modal-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-row:last-child {
+      border-bottom: none;
+    }
+
+    .modal-key {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .modal-val {
+      font-size: 0.75rem;
+      text-align: right;
+      max-width: 260px;
+    }
+
+    .modal-actions {
+      padding: 0 40px 40px;
+      display: flex;
+      gap: 12px;
+    }
+
+    #loginPage {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+    }
+
+    .login-box {
+      width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border-gold);
+      padding: 56px 48px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .login-sub {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: left;
+    }
+
+    .login-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .login-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 16px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .login-input:focus {
+      border-color: var(--gold-dim);
+    }
+
+    .login-err {
+      color: var(--red);
+      font-size: 0.65rem;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--surface2);
+      border: 1px solid var(--border-gold);
+      padding: 16px 24px;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      z-index: 9000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .toast.success {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    @media(max-width:1100px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .charts-row {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+
+  <!-- LOGIN -->
+  <div id="loginPage">
+    <div class="login-box">
+      <div class="login-logo">LUMIS</div>
+      <div class="login-sub">Admin Portal</div>
+      <div class="login-form">
+        <div><label class="login-label">Email</label><input class="login-input" type="email" id="loginEmail"
+            placeholder="admin@lumis.studio"></div>
+        <div><label class="login-label">Password</label><input class="login-input" type="password" id="loginPass"
+            placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="login-err" id="loginErr"></div>
+        <button class="btn-sm gold" id="loginBtn" onclick="doLogin()"
+          style="padding:14px;width:100%;font-size:0.65rem;">Sign In →</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">LUMIS</div>
+      <div class="sidebar-logo-sub">Admin Dashboard</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item active" onclick="showPage('dashboard',this)" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+        </svg>Dashboard
+      </a>
+      <div class="nav-section-label">Bookings</div>
+      <a class="nav-item" onclick="showPage('bookings',this)" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>All Bookings
+        <span class="nav-badge" id="pendingBadge">0</span>
+      </a>
+      <div class="nav-section-label">Finance</div>
+      <a class="nav-item" onclick="showPage('revenue',this)" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>Revenue
+      </a>
+      <div class="nav-section-label">Settings</div>
+      <a class="nav-item" onclick="showPage('pricing',this)" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+        </svg>Service Pricing
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-admin"><strong id="adminName">Admin</strong><span id="adminEmailEl">—</span></div>
+      <button class="btn-sm" onclick="doLogout()" style="margin-top:12px;width:100%;">Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="status-dot"></div>
+        <span style="font-size:0.6rem;color:var(--text-muted);letter-spacing:0.1em;">Live</span>
+        <button class="btn-sm" onclick="loadAllData()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card"><span class="kpi-label">Total Revenue</span>
+            <div class="kpi-value gold" id="kpi-revenue">$0</div>
+          </div>
+          <div class="kpi-card"><span class="kpi-label">Total Bookings</span>
+            <div class="kpi-value" id="kpi-bookings">0</div>
+          </div>
+          <div class="kpi-card"><span class="kpi-label">Pending Review</span>
+            <div class="kpi-value" id="kpi-pending" style="color:var(--amber)">0</div>
+          </div>
+          <div class="kpi-card"><span class="kpi-label">Confirmed</span>
+            <div class="kpi-value" id="kpi-confirmed" style="color:var(--green)">0</div>
+          </div>
+        </div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Monthly Revenue</div>
+            <div class="chart-sub">Confirmed bookings · Last 6 months</div>
+            <div class="bar-chart" id="barChart"></div>
+            <div style="display:flex;gap:8px;margin-top:16px;" id="barLabels"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Service Breakdown</div>
+            <div class="chart-sub">Share of all bookings</div>
+            <div class="donut-wrap">
+              <svg width="130" height="130" viewBox="0 0 130 130" id="donutSvg"></svg>
+              <div class="donut-legend" id="donutLegend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section-head">
+          <h3>Recent Bookings</h3><button class="btn-sm gold"
+            onclick="showPage('bookings',document.querySelector('.nav-item:nth-child(4))'))">View All →</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Client</th>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recentBody"></tbody>
+        </table>
+      </div>
+
+      <!-- BOOKINGS -->
+      <div class="page" id="page-bookings">
+        <div class="section-head" style="margin-bottom:16px;">
+          <h3>All Bookings</h3><input class="search-input" type="text" placeholder="Search ref, client, service..."
+            oninput="filterBookings(this.value)">
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-tab" onclick="setFilter('pending',this)">Pending</button>
+            <button class="filter-tab" onclick="setFilter('confirmed',this)">Confirmed</button>
+            <button class="filter-tab" onclick="setFilter('completed',this)">Completed</button>
+            <button class="filter-tab" onclick="setFilter('rejected',this)">Rejected</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Client</th>
+              <th>Service & Package</th>
+              <th>Scheduled</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="allBookingsBody"></tbody>
+        </table>
+      </div>
+
+      <!-- REVENUE -->
+      <div class="page" id="page-revenue">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card"><span class="kpi-label">Total Collected</span>
+            <div class="kpi-value gold" id="rev-total">$0</div>
+          </div>
+          <div class="kpi-card"><span class="kpi-label">This Month</span>
+            <div class="kpi-value" id="rev-month">$0</div>
+          </div>
+          <div class="kpi-card"><span class="kpi-label">Avg Booking Value</span>
+            <div class="kpi-value" id="rev-avg">$0</div>
+          </div>
+        </div>
+        <div class="chart-card" style="margin-bottom:32px;">
+          <div class="chart-title">Revenue Over Time</div>
+          <div class="chart-sub">Confirmed bookings · Last 12 months</div>
+          <div class="bar-chart" id="revBarChart" style="height:180px;"></div>
+          <div style="display:flex;gap:8px;margin-top:16px;" id="revBarLabels"></div>
+        </div>
+        <div class="section-head">
+          <h3>By Service</h3>
+        </div>
+        <table style="margin-top:16px;">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Bookings</th>
+              <th>Revenue</th>
+              <th>Avg Value</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody id="revBreakBody"></tbody>
+        </table>
+      </div>
+
+      <!-- PRICING -->
+      <div class="page" id="page-pricing">
+        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:32px;">Update package
+          prices. Changes reflect immediately on new bookings.</p>
+        <div class="pricing-grid" id="pricingGrid"></div>
+        <div style="margin-top:24px;"><button class="btn-sm gold" onclick="savePricing()"
+            style="padding:14px 40px;">Save All Prices</button></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Booking Detail</div><button class="modal-close"
+          onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let allBookings = [], currentFilter = 'all', currentSearch = '';
+    const SERVICES = ['Videography', 'Photography', 'Podcast', 'Graphic Design'];
+    const ICONS = { 'Videography': '🎬', 'Photography': '📷', 'Podcast': '🎙️', 'Graphic Design': '✏️' };
+    const COLORS = ['#C9A84C', '#7a6530', '#E8C97A', '#4a4030'];
+    const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const defaultPrices = { 'Videography': { Essential: 800, Signature: 1500, Prestige: 3000 }, 'Photography': { Essential: 350, Signature: 750, Prestige: 1400 }, 'Podcast': { Essential: 500, Signature: 1000, Prestige: 2200 }, 'Graphic Design': { Essential: 250, Signature: 600, Prestige: 1200 } };
+
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value;
+      const pass = document.getElementById('loginPass').value;
+      const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
+
+      if (email === 'admin@lumis.studio' && pass === 'admin123') {
+        localStorage.setItem('adminSession', 'true');
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminName').textContent = 'Admin';
+        document.getElementById('adminEmailEl').textContent = email;
+        loadAllData();
+      } else {
+        err.textContent = 'Invalid credentials. Use admin@lumis.studio / admin123';
+      }
+    }
+
+    async function doLogout() {
+      localStorage.removeItem('adminSession');
+      document.getElementById('loginPage').style.display = 'flex';
+    }
+
+    // Simple check on load
+    if (localStorage.getItem('adminSession') === 'true') {
+      document.getElementById('loginPage').style.display = 'none';
+      loadAllData();
+    }
+
+    async function loadAllData() {
+      try {
+        const res = await fetch('/api/admin/bookings');
+        const data = await res.json();
+        allBookings = data || [];
+        const pending = allBookings.filter(b => b.status === 'pending').length;
+        document.getElementById('pendingBadge').textContent = pending;
+        renderDashboard(); renderBookingsTable(); renderRevenuePage(); renderPricingPage();
+      } catch (error) {
+        showToast('Failed to load: ' + error.message, 'error');
+      }
+    }
+
+    function fmtMoney(cents) { return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+    function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'; }
+
+    // DASHBOARD
+    function renderDashboard() {
+      const confirmed = allBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+      const total = confirmed.reduce((s, b) => s + (b.amount_cents || 0), 0);
+      document.getElementById('kpi-revenue').textContent = fmtMoney(total);
+      document.getElementById('kpi-bookings').textContent = allBookings.length;
+      document.getElementById('kpi-pending').textContent = allBookings.filter(b => b.status === 'pending').length;
+      document.getElementById('kpi-confirmed').textContent = allBookings.filter(b => b.status === 'confirmed').length;
+      renderBarChart('barChart', 'barLabels', 6);
+      renderDonut();
+      renderTableRows('recentBody', allBookings.slice(0, 5));
+    }
+
+    function renderBarChart(chartId, labelsId, months) {
+      const chart = document.getElementById(chartId), labels = document.getElementById(labelsId);
+      if (!chart) return;
+      const now = new Date(), data = [];
+      for (let i = months - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const rev = allBookings.filter(b => {
+          const bd = new Date(b.created_at), bk = `${bd.getFullYear()}-${String(bd.getMonth() + 1).padStart(2, '0')}`;
+          return bk === key && (b.status === 'confirmed' || b.status === 'completed');
+        }).reduce((s, b) => s + (b.amount_cents || 0), 0);
+        data.push({ label: MONTHS_SHORT[d.getMonth()], rev });
+      }
+      const maxRev = Math.max(...data.map(m => m.rev), 1);
+      chart.innerHTML = data.map(m => `<div class="bar-group"><div class="bar" style="height:${Math.max(m.rev / maxRev * 100, 4)}%" title="${fmtMoney(m.rev)}"></div></div>`).join('');
+      if (labels) labels.innerHTML = data.map(m => `<div style="flex:1;text-align:center;font-size:0.55rem;color:var(--text-muted);letter-spacing:0.1em;">${m.label}</div>`).join('');
+    }
+
+    function renderDonut() {
+      const svg = document.getElementById('donutSvg'), legend = document.getElementById('donutLegend');
+      if (!svg) return;
+      const counts = SERVICES.map(s => allBookings.filter(b => b.service === s).length);
+      const total = counts.reduce((a, b) => a + b, 0) || 1;
+      const cx = 65, cy = 65, r = 50, sw = 20, circ = 2 * Math.PI * r;
+      let html = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1a1a1a" stroke-width="${sw}"/>`, off = 0;
+      counts.forEach((c, i) => {
+        const pct = c / total, dash = pct * circ, gap = circ - dash, rot = -90 + (off / total * 360);
+        html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${COLORS[i]}" stroke-width="${sw}" stroke-dasharray="${dash} ${gap}" transform="rotate(${rot} ${cx} ${cy})"/>`;
+        off += c;
+      });
+      svg.innerHTML = html;
+      legend.innerHTML = SERVICES.map((s, i) => `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i]}"></div><span class="legend-label">${s}</span><span class="legend-pct">${Math.round(counts[i] / total * 100)}%</span></div>`).join('');
+    }
+
+    function bookingRowHTML(b) {
+      return `<tr onclick="openModal('${b.id}')">
+    <td class="td-ref">${b.ref || '—'}</td>
+    <td class="td-client"><strong>${b.client_name || '—'}</strong><span>${b.client_email || ''}</span></td>
+    <td>${b.service || '—'} · ${b.package_name || '—'}</td>
+    <td>${fmtDate(b.booking_date)} ${b.booking_time ? '· ' + b.booking_time : ''}</td>
+    <td class="td-amount">${b.package_price || '—'}</td>
+    <td><span class="badge ${b.status || 'pending'}">${b.status || 'pending'}</span></td>
+    <td onclick="event.stopPropagation()"><div class="action-btns">
+      ${b.status === 'pending' ? `<button class="action-btn confirm" onclick="updateStatus('${b.id}','confirmed')">✓</button><button class="action-btn reject" onclick="updateStatus('${b.id}','rejected')">✕</button>` : ''}
+      ${b.status === 'confirmed' ? `<button class="action-btn" onclick="updateStatus('${b.id}','completed')">Done</button>` : ''}
+    </div></td>
+  </tr>`;
+    }
+
+    function renderTableRows(tbodyId, rows) {
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+      tbody.innerHTML = rows.length ? rows.map(bookingRowHTML).join('') : `<tr><td colspan="7" class="empty-state">No bookings found</td></tr>`;
+    }
+
+    function renderBookingsTable() {
+      let filtered = allBookings;
+      if (currentFilter !== 'all') filtered = filtered.filter(b => b.status === currentFilter);
+      if (currentSearch) { const q = currentSearch.toLowerCase(); filtered = filtered.filter(b => b.client_name?.toLowerCase().includes(q) || b.ref?.toLowerCase().includes(q) || b.service?.toLowerCase().includes(q)); }
+      renderTableRows('allBookingsBody', filtered);
+    }
+
+    function setFilter(f, el) { currentFilter = f; document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active')); el.classList.add('active'); renderBookingsTable(); }
+    function filterBookings(q) { currentSearch = q; renderBookingsTable(); }
+
+    async function updateStatus(id, status) {
+      const token = localStorage.getItem('adminToken');
+      try {
+        const res = await fetch(`/api/admin/bookings/${id}/status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+
+        if (res.status === 401) { doLogout(); return; }
+
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error);
+
+        showToast(`Booking marked as ${status}`, 'success');
+        await loadAllData(); closeModal();
+      } catch (error) {
+        showToast('Update failed: ' + error.message, 'error');
+      }
+    }
+
+    // MODAL
+    function openModal(id) {
+      const b = allBookings.find(x => x.id === id); if (!b) return;
+      document.getElementById('modalTitle').textContent = b.ref || 'Booking Detail';
+      document.getElementById('modalBody').innerHTML = [
+        ['Service', b.service || '—'], ['Package', b.package_name || '—'], ['Amount', b.package_price || '—'],
+        ['Date', fmtDate(b.booking_date)], ['Time', b.booking_time || '—'], ['Client', b.client_name || '—'],
+        ['Email', b.client_email || '—'], ['Phone', b.client_phone || '—'], ['Brief', b.project_brief || '—'],
+        ['Source', b.referral_source || '—'], ['Payment ID', b.stripe_payment_id || '—'],
+        ['Status', `<span class="badge ${b.status || 'pending'}">${b.status || 'pending'}</span>`],
+        ['Booked', b.created_at ? new Date(b.created_at).toLocaleString() : '—'],
+      ].map(([k, v]) => `<div class="modal-row"><div class="modal-key">${k}</div><div class="modal-val">${v}</div></div>`).join('');
+      let actions = '';
+      if (b.status === 'pending') actions = `<button class="btn-sm" style="border-color:var(--green);color:var(--green);" onclick="updateStatus('${b.id}','confirmed')">✓ Confirm</button><button class="btn-sm" style="border-color:var(--red);color:var(--red);" onclick="updateStatus('${b.id}','rejected')">✕ Reject</button>`;
+      if (b.status === 'confirmed') actions = `<button class="btn-sm gold" onclick="updateStatus('${b.id}','completed')">Mark Completed</button>`;
+      document.getElementById('modalActions').innerHTML = actions;
+      document.getElementById('modalOverlay').classList.add('open');
+    }
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+    // REVENUE
+    function renderRevenuePage() {
+      const confirmed = allBookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
+      const total = confirmed.reduce((s, b) => s + (b.amount_cents || 0), 0);
+      const now = new Date();
+      const thisMonth = confirmed.filter(b => { const d = new Date(b.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).reduce((s, b) => s + (b.amount_cents || 0), 0);
+      const avg = confirmed.length ? Math.round(total / confirmed.length) : 0;
+      document.getElementById('rev-total').textContent = fmtMoney(total);
+      document.getElementById('rev-month').textContent = fmtMoney(thisMonth);
+      document.getElementById('rev-avg').textContent = fmtMoney(avg);
+      renderBarChart('revBarChart', 'revBarLabels', 12);
+      document.getElementById('revBreakBody').innerHTML = SERVICES.map(s => {
+        const svc = confirmed.filter(b => b.service === s);
+        const rev = svc.reduce((a, b) => a + (b.amount_cents || 0), 0);
+        const avg = svc.length ? Math.round(rev / svc.length) : 0;
+        const share = total ? Math.round(rev / total * 100) : 0;
+        return `<tr><td>${ICONS[s]} ${s}</td><td>${svc.length}</td><td class="td-amount">${fmtMoney(rev)}</td><td>${fmtMoney(avg)}</td><td><div style="display:flex;align-items:center;gap:8px;"><div style="width:60px;height:4px;background:var(--border);"><div style="width:${share}%;height:100%;background:var(--gold);"></div></div><span style="font-size:0.65rem;color:var(--text-muted)">${share}%</span></div></td></tr>`;
+      }).join('');
+    }
+
+    // PRICING
+    function renderPricingPage() {
+      document.getElementById('pricingGrid').innerHTML = SERVICES.map(svc => `
+    <div class="pricing-service">
+      <div class="pricing-service-name"><span>${ICONS[svc]}</span>${svc}</div>
+      ${['Essential', 'Signature', 'Prestige'].map(pkg => `
+        <div class="pricing-pkg">
+          <span class="pricing-pkg-name">${pkg}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1.2rem;">$</span>
+            <input class="pricing-pkg-input" type="number" id="price_${svc.replace(' ', '_')}_${pkg}" value="${defaultPrices[svc]?.[pkg] || 0}">
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+    }
+
+    async function savePricing() {
+      const token = localStorage.getItem('adminToken');
+      const updates = [];
+      SERVICES.forEach(svc => ['Essential', 'Signature', 'Prestige'].forEach(pkg => {
+        const el = document.getElementById(`price_${svc.replace(' ', '_')}_${pkg}`);
+        if (el) updates.push({ service: svc, package_name: pkg, price: parseInt(el.value) });
+      }));
+
+      try {
+        const res = await fetch('/api/admin/pricing/upsert', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ updates })
+        });
+
+        if (res.status === 401) { doLogout(); return; }
+
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error);
+        showToast('Prices saved!', 'success');
+      } catch (error) {
+        showToast('Save failed: ' + error.message, 'error');
+      }
+    }
+
+    function showPage(name, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(`page-${name}`).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (el) el.classList.add('active');
+      const titles = { dashboard: 'Dashboard', bookings: 'All Bookings', revenue: 'Revenue', pricing: 'Service Pricing' };
+      document.getElementById('pageTitle').textContent = titles[name] || name;
+    }
+
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast'); t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 4000);
+    }
+  </script>
+</body>
+
+</html>

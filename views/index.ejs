@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUMIS — Creative Studio Booking</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --gold-dim: #7a6530;
+      --bg: #080808;
+      --surface: #0f0f0f;
+      --surface2: #161616;
+      --surface3: #1e1e1e;
+      --text: #f0ede8;
+      --text-muted: #7a7670;
+      --text-dim: #3a3835;
+      --border: #222;
+      --border-gold: rgba(201, 168, 76, 0.25);
+      --error: #e05555;
+      --success: #4caf7d;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.5;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 60px;
+      background: linear-gradient(to bottom, rgba(8, 8, 8, 0.95), transparent);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--gold);
+    }
+
+    .nav-cta {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 10px 28px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .nav-cta:hover {
+      background: var(--gold);
+      color: var(--bg);
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 120px 40px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 60%, rgba(201, 168, 76, 0.06) 0%, transparent 70%), radial-gradient(ellipse 30% 30% at 20% 20%, rgba(201, 168, 76, 0.04) 0%, transparent 60%);
+    }
+
+    .hero-line {
+      width: 1px;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+      margin-bottom: 48px;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.4
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    .hero-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      font-weight: 300;
+      line-height: 1.05;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .hero-subtitle {
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 32px 0 48px;
+      max-width: 500px;
+      line-height: 2;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: var(--bg);
+      border: none;
+      padding: 16px 48px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-light);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(201, 168, 76, 0.3);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 16px 24px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+    }
+
+    .btn-ghost::after {
+      content: '→';
+      transition: transform 0.3s;
+    }
+
+    .btn-ghost:hover::after {
+      transform: translateX(4px);
+    }
+
+    /* SERVICES */
+    .section {
+      padding: 120px 60px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 80px;
+    }
+
+    .section-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      font-weight: 300;
+      line-height: 1.1;
+    }
+
+    .section-title em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .section-count {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 6rem;
+      font-weight: 300;
+      color: var(--text-dim);
+      line-height: 1;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+      background: var(--border);
+    }
+
+    .service-card {
+      background: var(--surface);
+      padding: 56px 48px;
+      cursor: pointer;
+      transition: all 0.4s;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid transparent;
+    }
+
+    .service-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(201, 168, 76, 0.06) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .service-card:hover {
+      background: var(--surface2);
+      border-color: var(--border-gold);
+      transform: translateY(-2px);
+    }
+
+    .service-card:hover::before {
+      opacity: 1;
+    }
+
+    .service-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.8rem;
+      color: var(--gold-dim);
+      letter-spacing: 0.2em;
+      margin-bottom: 32px;
+      display: block;
+    }
+
+    .service-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 28px;
+      color: var(--gold);
+      opacity: 0.8;
+    }
+
+    .service-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 16px;
+    }
+
+    .service-desc {
+      font-size: 0.72rem;
+      line-height: 1.9;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 32px;
+    }
+
+    .service-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .tag {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      border: 1px solid var(--gold-dim);
+      padding: 5px 12px;
+    }
+
+    .service-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .price-from {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .price-amount {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      font-weight: 400;
+      color: var(--gold);
+    }
+
+    .service-arrow {
+      position: absolute;
+      bottom: 48px;
+      right: 48px;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.3s;
+      font-size: 1rem;
+    }
+
+    .service-card:hover .service-arrow {
+      border-color: var(--gold);
+      color: var(--gold);
+      transform: translate(2px, -2px);
+    }
+
+    /* BOOKING */
+    #booking {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 120px 60px;
+    }
+
+    .booking-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .steps-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 80px;
+      gap: 0;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      position: relative;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: calc(50% + 20px);
+      right: -20px;
+      top: 50%;
+      height: 1px;
+      background: var(--border);
+      transform: translateY(-50%);
+    }
+
+    .step-item.done::after,
+    .step-item.active::after {
+      background: var(--gold-dim);
+    }
+
+    .step-num {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+
+    .step-item.active .step-num {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.08);
+    }
+
+    .step-item.done .step-num {
+      border-color: var(--gold-dim);
+      background: var(--gold-dim);
+      color: var(--bg);
+    }
+
+    .step-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color 0.3s;
+    }
+
+    .step-item.active .step-label {
+      color: var(--text);
+    }
+
+    .booking-panel {
+      display: none;
+    }
+
+    .booking-panel.active {
+      display: block;
+    }
+
+    /* SERVICE OPTIONS */
+    .service-options {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .service-option {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 32px 24px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .service-option:hover,
+    .service-option.selected {
+      border-color: var(--gold);
+      background: rgba(201, 168, 76, 0.05);
+    }
+
+    .service-option-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .service-option-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .service-option-price {
+      font-size: 0.65rem;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+    }
+
+    /* PACKAGES */
+    .packages-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .package-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 40px 32px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .package-card.featured {
+      border-color: var(--gold-dim);
+    }
+
+    .package-card.featured::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: var(--bg);
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
+      padding: 5px 16px;
+      font-weight: 600;
+    }
+
+    .package-card:hover,
+    .package-card.selected {
+      border-color: var(--gold);
+      background: rgba(201, 168, 76, 0.05);
+    }
+
+    .package-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .package-price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      color: var(--gold);
+      margin-bottom: 24px;
+    }
+
+    .package-price span {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .package-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .package-features li {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .package-features li::before {
+      content: '—';
+      color: var(--gold-dim);
+      flex-shrink: 0;
+    }
+
+    /* CALENDAR */
+    .datetime-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+
+    .calendar-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 24px;
+      display: block;
+    }
+
+    .calendar {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .cal-month {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+    }
+
+    .cal-nav {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cal-nav:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .cal-days-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .cal-day-name {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+    }
+
+    .cal-day:not(.empty):not(.past):hover {
+      border-color: var(--gold-dim);
+      color: var(--text);
+    }
+
+    .cal-day.today {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .cal-day.selected {
+      background: var(--gold);
+      color: var(--bg);
+      font-weight: 600;
+      border-color: var(--gold);
+    }
+
+    .cal-day.past {
+      opacity: 0.2;
+      cursor: default;
+    }
+
+    .cal-day.empty {
+      cursor: default;
+    }
+
+    .time-slots {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .time-slot {
+      border: 1px solid var(--border);
+      padding: 14px;
+      text-align: center;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--text-muted);
+    }
+
+    .time-slot:hover,
+    .time-slot.selected {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.05);
+    }
+
+    .time-slot.unavailable {
+      opacity: 0.3;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* FORMS */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .form-input,
+    .form-textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 16px 20px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      transition: border-color 0.3s;
+      outline: none;
+      width: 100%;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      border-color: var(--gold-dim);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    /* STRIPE PAYMENT */
+    .review-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+
+    .review-summary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 48px;
+    }
+
+    .review-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-row-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .review-row-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+    }
+
+    .review-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 32px;
+      margin-top: 16px;
+    }
+
+    .review-total-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .review-total-amount {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      color: var(--gold);
+    }
+
+    .payment-form {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .payment-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+    }
+
+    .payment-secure {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .payment-secure::before {
+      content: '🔒';
+      font-size: 0.7rem;
+    }
+
+    #card-element {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      transition: border-color 0.3s;
+    }
+
+    #card-element.focused {
+      border-color: var(--gold-dim);
+    }
+
+    #card-errors {
+      color: var(--error);
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      min-height: 20px;
+    }
+
+    .pay-btn-wrap {
+      position: relative;
+    }
+
+    .pay-spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(8, 8, 8, 0.3);
+      border-top-color: var(--bg);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    @keyframes spin {
+      to {
+        transform: translateY(-50%) rotate(360deg);
+      }
+    }
+
+    /* SUCCESS */
+    #success-panel {
+      display: none;
+      text-align: center;
+      padding: 80px 40px;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      border: 1px solid var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 40px;
+      font-size: 2rem;
+      animation: appear 0.6s ease;
+    }
+
+    @keyframes appear {
+      from {
+        transform: scale(0);
+        opacity: 0
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    .success-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      margin-bottom: 20px;
+    }
+
+    .success-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      line-height: 2;
+      max-width: 500px;
+      margin: 0 auto 40px;
+    }
+
+    .success-ref {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: var(--gold);
+      letter-spacing: 0.3em;
+      margin-bottom: 48px;
+    }
+
+    .booking-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .gold-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--surface2);
+      border: 1px solid var(--border-gold);
+      padding: 16px 24px;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      z-index: 9000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s;
+      max-width: 320px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    @media(max-width:900px) {
+      nav {
+        padding: 20px 24px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .section {
+        padding: 80px 24px;
+      }
+
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .service-options {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .packages-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .datetime-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .review-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-group.full {
+        grid-column: 1;
+      }
+
+      #booking {
+        padding: 80px 24px;
+      }
+
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  
+
+  <nav>
+    <div class="nav-logo">LUMIS</div>
+    <ul class="nav-links">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#booking">Book</a></li>
+      <li><a href="#">Portfolio</a></li>
+      <li><a href="#">About</a></li>
+    </ul>
+    <button class="nav-cta" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">Book
+      Now</button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-line"></div>
+    <p class="hero-eyebrow">Premium Creative Studio</p>
+    <h1 class="hero-title">Where Vision<br><em>Becomes</em> Art</h1>
+    <p class="hero-subtitle">Videography · Photography · Podcast Production · Graphic Design</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">Book
+        a Session</button>
+      <button class="btn-ghost"
+        onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">Explore Services</button>
+    </div>
+  </section>
+
+  <div class="gold-divider"></div>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <span class="section-label">What We Offer</span>
+          <h2 class="section-title">Crafted for the<br><em>Extraordinary</em></h2>
+        </div>
+        <span class="section-count">04</span>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <span class="service-number">01 /</span>
+          <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <rect x="2" y="7" width="15" height="11" rx="1" />
+            <path d="M17 9l5-3v12l-5-3" />
+            <circle cx="9" cy="12" r="2" />
+          </svg>
+          <h3 class="service-name">Videography</h3>
+          <p class="service-desc">Cinematic storytelling that captures moments with precision and artistry. From brand
+            films to event coverage, every frame is a masterwork.</p>
+          <div class="service-tags"><span class="tag">Brand Films</span><span class="tag">Events</span><span
+              class="tag">Documentaries</span><span class="tag">Music Videos</span></div>
+          <div class="service-price"><span class="price-from">From</span><span class="price-amount">$800</span></div>
+          <div class="service-arrow">→</div>
+        </div>
+        <div class="service-card">
+          <span class="service-number">02 /</span>
+          <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <h3 class="service-name">Photography</h3>
+          <p class="service-desc">Visual narratives that transcend the ordinary. Our photographers craft images that
+            speak volumes and endure through time.</p>
+          <div class="service-tags"><span class="tag">Portrait</span><span class="tag">Commercial</span><span
+              class="tag">Editorial</span><span class="tag">Product</span></div>
+          <div class="service-price"><span class="price-from">From</span><span class="price-amount">350</span></div>
+          <div class="service-arrow">→</div>
+        </div>GHc
+        <div class="service-card">
+          <span class="service-number">03 /</span>
+          <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+          <h3 class="service-name">Podcast Production</h3>
+          <p class="service-desc">Professional audio and video podcast production with pristine sound engineering,
+            editing, and distribution-ready delivery.</p>
+          <div class="service-tags"><span class="tag">Recording</span><span class="tag">Editing</span><span
+              class="tag">Branding</span><span class="tag">Distribution</span></div>
+          <div class="service-price"><span class="price-from">From</span><span class="price-amount">GHc500</span></div>
+          <div class="service-arrow">→</div>
+        </div>
+        <div class="service-card">
+          <span class="service-number">04 /</span>
+          <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M9 21V9" />
+          </svg>
+          <h3 class="service-name">Graphic Design</h3>
+          <p class="service-desc">Bold visual identities and compelling design systems that elevate your brand above the
+            noise and into memory.</p>
+          <div class="service-tags"><span class="tag">Branding</span><span class="tag">Print</span><span
+              class="tag">Social Media</span><span class="tag">UI/UX</span></div>
+          <div class="service-price"><span class="price-from">From</span><span class="price-amount">GHc250</span></div>
+          <div class="service-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="gold-divider"></div>
+
+  <!-- BOOKING FLOW -->
+  <section id="booking">
+    <div class="booking-container">
+      <div style="margin-bottom:64px;">
+        <span class="section-label">Reserve Your Session</span>
+        <h2 class="section-title">Book <em>Your</em> Experience</h2>
+      </div>
+      <div class="steps-bar" id="stepsBar">
+        <div class="step-item active" id="step1">
+          <div class="step-num">01</div><span class="step-label">Service</span>
+        </div>
+        <div class="step-item" id="step2">
+          <div class="step-num">02</div><span class="step-label">Package</span>
+        </div>
+        <div class="step-item" id="step3">
+          <div class="step-num">03</div><span class="step-label">Schedule</span>
+        </div>
+        <div class="step-item" id="step4">
+          <div class="step-num">04</div><span class="step-label">Details</span>
+        </div>
+        <div class="step-item" id="step5">
+          <div class="step-num">05</div><span class="step-label">Payment</span>
+        </div>
+      </div>
+
+      <!-- PANEL 1: SERVICE -->
+      <div class="booking-panel active" id="panel1">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:12px;">Select a
+          Service</h3>
+        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:40px;">Choose the creative
+          service you'd like to book</p>
+        <div class="service-options">
+          <div class="service-option" onclick="selectService(this,'Videography',800)"><span
+              class="service-option-icon">🎬</span>
+            <div class="service-option-name">Videography</div>
+            <div class="service-option-price">From GHc800</div>
+          </div>
+          <div class="service-option" onclick="selectService(this,'Photography',350)"><span
+              class="service-option-icon">📷</span>
+            <div class="service-option-name">Photography</div>
+            <div class="service-option-price">From GHc350</div>
+          </div>
+          <div class="service-option" onclick="selectService(this,'Podcast',500)"><span
+              class="service-option-icon">🎙️</span>
+            <div class="service-option-name">Podcast</div>
+            <div class="service-option-price">From GHc500</div>
+          </div>
+          <div class="service-option" onclick="selectService(this,'Graphic Design',250)"><span
+              class="service-option-icon">✏️</span>
+            <div class="service-option-name">Graphic Design</div>
+            <div class="service-option-price">From GHc250</div>
+          </div>
+        </div>
+        <div class="booking-nav">
+          <div></div><button class="btn-primary" onclick="goToStep(2)" id="next1" disabled>Continue →</button>
+        </div>
+      </div>
+
+      <!-- PANEL 2: PACKAGE -->
+      <div class="booking-panel" id="panel2">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:12px;">Choose
+          Your Package</h3>
+        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:40px;">Select the package
+          that best suits your needs</p>
+        <div class="packages-grid" id="packagesGrid"></div>
+        <div class="booking-nav">
+          <button class="btn-ghost" onclick="goToStep(1)" style="color:var(--text-muted);">← Back</button>
+          <button class="btn-primary" onclick="goToStep(3)" id="next2" disabled>Continue →</button>
+        </div>
+      </div>
+
+      <!-- PANEL 3: DATE & TIME -->
+      <div class="booking-panel" id="panel3">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:12px;">Schedule
+          Your Session</h3>
+        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:40px;">Pick a date and
+          preferred time slot</p>
+        <div class="datetime-grid">
+          <div>
+            <span class="calendar-label">Select Date</span>
+            <div class="calendar">
+              <div class="cal-header">
+                <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+                <span class="cal-month" id="calMonth"></span>
+                <button class="cal-nav" onclick="changeMonth(1)">›</button>
+              </div>
+              <div class="cal-days-header">
+                <div class="cal-day-name">Su</div>
+                <div class="cal-day-name">Mo</div>
+                <div class="cal-day-name">Tu</div>
+                <div class="cal-day-name">We</div>
+                <div class="cal-day-name">Th</div>
+                <div class="cal-day-name">Fr</div>
+                <div class="cal-day-name">Sa</div>
+              </div>
+              <div class="cal-grid" id="calGrid"></div>
+            </div>
+          </div>
+          <div>
+            <span class="calendar-label">Select Time</span>
+            <div class="time-slots">
+              <div class="time-grid" id="timeGrid"></div>
+            </div>
+          </div>
+        </div>
+        <div class="booking-nav">
+          <button class="btn-ghost" onclick="goToStep(2)" style="color:var(--text-muted);">← Back</button>
+          <button class="btn-primary" onclick="goToStep(4)" id="next3" disabled>Continue →</button>
+        </div>
+      </div>
+
+      <!-- PANEL 4: DETAILS -->
+      <div class="booking-panel" id="panel4">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:12px;">Your
+          Details</h3>
+        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:40px;">Tell us about
+          yourself and your project</p>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" type="text"
+              id="fname" placeholder="Alexandra" oninput="checkDetails()"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" type="text"
+              id="lname" placeholder="Chen" oninput="checkDetails()"></div>
+          <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email"
+              id="email" placeholder="you@example.com" oninput="checkDetails()"></div>
+          <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" type="tel"
+              id="phone" placeholder="+1 (555) 000-0000" oninput="checkDetails()"></div>
+          <div class="form-group full"><label class="form-label">Project Brief</label><textarea class="form-textarea"
+              id="brief" placeholder="Describe your vision, goals, and any specific requirements..."></textarea></div>
+          <div class="form-group full"><label class="form-label">How did you hear about us?</label><input
+              class="form-input" type="text" id="source" placeholder="Instagram, referral, Google..."></div>
+        </div>
+        <div class="booking-nav">
+          <button class="btn-ghost" onclick="goToStep(3)" style="color:var(--text-muted);">← Back</button>
+          <button class="btn-primary" onclick="goToStep(5)" id="next4" disabled>Review & Pay →</button>
+        </div>
+      </div>
+
+      <!-- PANEL 5: PAYMENT -->
+      <div class="booking-panel" id="panel5">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:12px;">Review &
+          Pay</h3>
+        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:40px;">Complete your
+          booking with secure payment</p>
+        <div class="review-layout">
+          <div class="review-summary">
+            <h4 class="review-title">Booking Summary</h4>
+            <div class="review-row">
+              <div>
+                <div class="review-row-label">Service</div>
+                <div class="review-row-value" id="rv-service">—</div>
+              </div>
+            </div>
+            <div class="review-row">
+              <div>
+                <div class="review-row-label">Package</div>
+                <div class="review-row-value" id="rv-package">—</div>
+              </div>
+            </div>
+            <div class="review-row">
+              <div>
+                <div class="review-row-label">Date & Time</div>
+                <div class="review-row-value" id="rv-datetime">—</div>
+              </div>
+            </div>
+            <div class="review-row">
+              <div>
+                <div class="review-row-label">Client</div>
+                <div class="review-row-value" id="rv-client">—</div>
+              </div>
+            </div>
+            <div class="review-total">
+              <span class="review-total-label">Total Due</span>
+              <span class="review-total-amount" id="rv-total">—</span>
+            </div>
+          </div>
+          <div class="payment-form">
+            <h4 class="payment-title">Secure Payment</h4>
+            <span class="payment-secure">256-bit SSL · Powered by Stripe</span>
+            <div class="form-group">
+              <label class="form-label">Cardholder Name</label>
+              <input class="form-input" type="text" id="cardName" placeholder="Name on card">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Card Details</label>
+              <div id="card-element"></div>
+              <div id="card-errors"></div>
+            </div>
+            <div class="pay-btn-wrap">
+              <button class="btn-primary" id="payBtn" onclick="handlePayment()" style="width:100%;padding:18px;">
+                Confirm & Pay
+              </button>
+              <div class="pay-spinner" id="paySpinner"></div>
+            </div>
+          </div>
+        </div>
+        <div class="booking-nav">
+          <button class="btn-ghost" onclick="goToStep(4)" style="color:var(--text-muted);">← Back</button>
+          <div></div>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="success-panel">
+        <div class="success-icon">✦</div>
+        <h3 class="success-title">Booking <em style="font-style:italic;color:var(--gold)">Confirmed</em></h3>
+        <p class="success-sub">Thank you for choosing LUMIS. A confirmation has been sent to the studio. Our team will
+          reach out within 24 hours to finalize your session details.</p>
+        <p class="success-ref" id="bookingRef">REF: LMS-000000</p>
+        <button class="btn-primary" onclick="resetBooking()">Book Another Session</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="gold-divider"></div>
+  <footer
+    style="background:var(--surface);padding:60px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;">
+    <div>
+      <div class="nav-logo" style="font-size:1.4rem;margin-bottom:8px;">LUMIS</div>
+      <p style="font-size:0.65rem;color:var(--text-muted);letter-spacing:0.15em;">Premium Creative Studio</p>
+    </div>
+    <p style="font-size:0.6rem;color:var(--text-dim);letter-spacing:0.15em;">© 2026 LUMIS. All rights reserved.</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── INIT ────────────────────────────────────────────────
+    // Stripe elements are still needed for the card input, but the full Stripe object is not used for this simplified payment
+    const elements = Stripe('pk_test_TYooMQauvdEDq542VcVEqKDfB').elements({ appearance: { theme: 'night', variables: { colorPrimary: '#C9A84C', colorBackground: '#161616', colorText: '#f0ede8', colorDanger: '#e05555', fontFamily: 'Montserrat, sans-serif', borderRadius: '0px' } } });
+    const cardElement = elements.create('card', { style: { base: { color: '#f0ede8', fontFamily: '"Montserrat", sans-serif', fontSize: '14px', '::placeholder': { color: '#7a7670' } } } });
+
+    // ── STATE ────────────────────────────────────────────────
+    const state = {
+      service: null, servicePrice: null,
+      packageName: null, packagePrice: null, packagePriceCents: null,
+      date: null, dateFormatted: null, time: null,
+      currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear()
+    };
+
+    const packages = {
+      'Videography': [
+        { name: 'Essential', price: 'GHc800', cents: 80000, features: ['2-hour shoot', '1 edited video', '1080p delivery', '3 revisions'] },
+        { name: 'Signature', price: 'GHc1,500', cents: 150000, features: ['4-hour shoot', '2 edited videos', '4K delivery', '5 revisions', 'Color grading'], featured: true },
+        { name: 'Prestige', price: 'GHc3,000', cents: 300000, features: ['Full-day shoot', '5 edited videos', '4K + RAW files', 'Unlimited revisions', 'Drone footage', 'Same-week delivery'] }
+      ],
+      'Photography': [
+        { name: 'Essential', price: 'GHc350', cents: 35000, features: ['1-hour shoot', '20 edited images', 'Digital delivery', '2 revisions'] },
+        { name: 'Signature', price: 'GHc750', cents: 75000, features: ['3-hour shoot', '60 edited images', 'Digital + Print', '4 revisions', 'Styling consult'], featured: true },
+        { name: 'Prestige', price: 'GHc1,400', cents: 140000, features: ['Full-day shoot', '150+ edited images', 'RAW + Edited', 'Unlimited revisions', 'Rush delivery', 'Printing service'] }
+      ],
+      'Podcast': [
+        { name: 'Essential', price: 'GHc500', cents: 50000, features: ['1 episode recorded', 'Basic audio edit', 'MP3 delivery', '1 revision'] },
+        { name: 'Signature', price: 'GHc1,000', cents: 100000, features: ['3 episodes', 'Video + Audio', 'Full post-production', 'Thumbnail design', 'Show notes'], featured: true },
+        { name: 'Prestige', price: 'GHc2,200', cents: 220000, features: ['10 episodes', 'Full production', 'Branding package', 'Distribution setup', 'Monthly support'] }
+      ],
+      'Graphic Design': [
+        { name: 'Essential', price: 'GHc250', cents: 25000, features: ['1 design concept', '3 file formats', '2 revisions', '3-day turnaround'] },
+        { name: 'Signature', price: 'GHc600', cents: 60000, features: ['3 design concepts', 'Full brand kit', '5 revisions', 'Source files', '48hr turnaround'], featured: true },
+        { name: 'Prestige', price: 'GHc1,200', cents: 120000, features: ['Full brand identity', 'Unlimited concepts', 'All source files', 'Brand guide', 'Priority support'] }
+      ]
+    };
+
+    const times = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+    const unavailTimes = ['11:00 AM', '3:00 PM'];
+
+    // ── STRIPE MOUNT ─────────────────────────────────────────
+    function mountCard() {
+      setTimeout(() => {
+        cardElement.mount('#card-element');
+        cardElement.on('focus', () => document.getElementById('card-element').classList.add('focused'));
+        cardElement.on('blur', () => document.getElementById('card-element').classList.remove('focused'));
+        cardElement.on('change', e => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
+      }, 100);
+    }
+
+    // ── SERVICE ───────────────────────────────────────────────
+    function selectService(el, name, price) {
+      document.querySelectorAll('.service-option').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      state.service = name; state.servicePrice = price;
+      document.getElementById('next1').disabled = false;
+    }
+
+    // ── PACKAGES ──────────────────────────────────────────────
+    function renderPackages() {
+      const grid = document.getElementById('packagesGrid');
+      grid.innerHTML = '';
+      (packages[state.service] || []).forEach(pkg => {
+        grid.innerHTML += `<div class="package-card${pkg.featured ? ' featured' : ''}" onclick="selectPackage(this,'${pkg.name}','${pkg.price}',${pkg.cents})">
+      <div class="package-name">${pkg.name}</div>
+      <div class="package-price">${pkg.price} <span>/ session</span></div>
+      <ul class="package-features">${pkg.features.map(f => `<li>${f}</li>`).join('')}</ul>
+    </div>`;
+      });
+    }
+
+    function selectPackage(el, name, price, cents) {
+      document.querySelectorAll('.package-card').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      state.packageName = name; state.packagePrice = price; state.packagePriceCents = cents;
+      document.getElementById('next2').disabled = false;
+    }
+
+    // ── CALENDAR ──────────────────────────────────────────────
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function renderCalendar() {
+      document.getElementById('calMonth').textContent = `${MONTHS[state.currentMonth]} ${state.currentYear}`;
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+      const firstDay = new Date(state.currentYear, state.currentMonth, 1).getDay();
+      const daysInMonth = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
+      const today = new Date();
+      for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(state.currentYear, state.currentMonth, d);
+        const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const isToday = date.toDateString() === today.toDateString();
+        const isSelected = state.date === `${state.currentYear}-${state.currentMonth}-${d}`;
+        const cls = ['cal-day', isPast ? 'past' : '', isToday ? 'today' : '', isSelected ? 'selected' : ''].join(' ').trim();
+        grid.innerHTML += `<div class="${cls}" onclick="${isPast ? '' : `selectDate(this,${d})`}">${d}</div>`;
+      }
+    }
+
+    function selectDate(el, day) {
+      document.querySelectorAll('.cal-day').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      state.date = `${state.currentYear}-${state.currentMonth + 1}-${day}`;
+      state.dateFormatted = `${MONTHS_SHORT[state.currentMonth]} ${day}, ${state.currentYear}`;
+      checkSchedule();
+    }
+
+    function changeMonth(dir) {
+      state.currentMonth += dir;
+      if (state.currentMonth > 11) { state.currentMonth = 0; state.currentYear++; }
+      if (state.currentMonth < 0) { state.currentMonth = 11; state.currentYear--; }
+      renderCalendar();
+    }
+
+    function renderTimes() {
+      document.getElementById('timeGrid').innerHTML = times.map(t => {
+        const ua = unavailTimes.includes(t);
+        return `<div class="time-slot${ua ? ' unavailable' : ''}" onclick="${ua ? '' : `selectTime(this,'${t}')`}">${t}${ua ? '<br><span style="font-size:0.55rem;color:var(--text-dim)">Unavail.</span>' : ''}</div>`;
+      }).join('');
+    }
+
+    function selectTime(el, time) {
+      document.querySelectorAll('.time-slot').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      state.time = time;
+      checkSchedule();
+    }
+
+    function checkSchedule() {
+      document.getElementById('next3').disabled = !(state.date && state.time);
+    }
+
+    // ── DETAILS ───────────────────────────────────────────────
+    function checkDetails() {
+      const ok = document.getElementById('fname').value.trim() && document.getElementById('email').value.trim();
+      document.getElementById('next4').disabled = !ok;
+    }
+
+    // ── STEP NAV ──────────────────────────────────────────────
+    function goToStep(n) {
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`panel${i}`).classList.remove('active');
+        const s = document.getElementById(`step${i}`);
+        s.classList.remove('active', 'done');
+        if (i < n) s.classList.add('done');
+        if (i === n) s.classList.add('active');
+      }
+      document.getElementById(`panel${n}`).classList.add('active');
+      if (n === 2) renderPackages();
+      if (n === 3) { renderCalendar(); renderTimes(); }
+      if (n === 5) { populateReview(); }
+      document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function populateReview() {
+      document.getElementById('rv-service').textContent = state.service || '—';
+      document.getElementById('rv-package').textContent = `${state.packageName} — ${state.packagePrice}`;
+      document.getElementById('rv-datetime').textContent = `${state.dateFormatted || '—'} at ${state.time || '—'}`;
+      const fn = document.getElementById('fname').value, ln = document.getElementById('lname').value;
+      document.getElementById('rv-client').textContent = `${fn} ${ln}`.trim();
+      document.getElementById('rv-total').textContent = state.packagePrice;
+    }
+
+    // ── PAYMENT ───────────────────────────────────────────────
+    // ── PAYMENT ───────────────────────────────────────────────
+    async function handlePayment() {
+      const btn = document.getElementById('payBtn');
+      const spinner = document.getElementById('paySpinner');
+      btn.disabled = true; spinner.style.display = 'block';
+
+      try {
+        const bookingData = {
+          service: state.service,
+          package_name: state.packageName,
+          package_price: state.packagePrice,
+          amount_cents: state.packagePriceCents,
+          booking_date: state.date,
+          booking_time: state.time,
+          client_name: `${document.getElementById('fname').value} ${document.getElementById('lname').value}`.trim(),
+          client_email: document.getElementById('email').value,
+          client_phone: document.getElementById('phone').value,
+          project_brief: document.getElementById('brief').value,
+          referral_source: document.getElementById('source').value,
+          stripe_payment_id: 'manual_payment_' + Date.now(), // Simplified for this demo
+        };
+
+        const res = await fetch('/api/bookings/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookingData)
+        });
+
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error);
+
+        showSuccess(result.ref);
+
+      } catch (err) {
+        showToast(err.message, true);
+        btn.disabled = false; spinner.style.display = 'none';
+      }
+    }
+
+    function showSuccess(ref) {
+      document.getElementById('stepsBar').style.display = 'none';
+      for (let i = 1; i <= 5; i++) document.getElementById(`panel${i}`).style.display = 'none';
+      const s = document.getElementById('success-panel');
+      s.style.display = 'block';
+      document.getElementById('bookingRef').textContent = `REF: ${ref}`;
+      document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetBooking() {
+      document.getElementById('stepsBar').style.display = 'flex';
+      document.getElementById('success-panel').style.display = 'none';
+      for (let i = 1; i <= 5; i++) document.getElementById(`panel${i}`).style.display = '';
+      Object.keys(state).forEach(k => { if (!['currentMonth', 'currentYear'].includes(k)) state[k] = null; });
+      goToStep(1);
+      document.querySelectorAll('.service-option').forEach(e => e.classList.remove('selected'));
+      document.getElementById('next1').disabled = true;
+    }
+
+    // ── TOAST ────────────────────────────────────────────────
+    function showToast(msg, isError = false) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast${isError ? ' error' : ''} show`;
+      setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    renderCalendar();
+  </script>
+</body>
+
+</html>
