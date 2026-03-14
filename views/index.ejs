@@ -1117,7 +1117,7 @@
 
 <body>
 
-  
+
 
   <nav>
     <div class="nav-logo">LUMIS</div>
@@ -1187,7 +1187,7 @@
               class="tag">Editorial</span><span class="tag">Product</span></div>
           <div class="service-price"><span class="price-from">From</span><span class="price-amount">350</span></div>
           <div class="service-arrow">→</div>
-        </div>GHc
+        </div>
         <div class="service-card">
           <span class="service-number">03 /</span>
           <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -1243,9 +1243,6 @@
         </div>
         <div class="step-item" id="step4">
           <div class="step-num">04</div><span class="step-label">Details</span>
-        </div>
-        <div class="step-item" id="step5">
-          <div class="step-num">05</div><span class="step-label">Payment</span>
         </div>
       </div>
 
@@ -1357,73 +1354,10 @@
         </div>
         <div class="booking-nav">
           <button class="btn-ghost" onclick="goToStep(3)" style="color:var(--text-muted);">← Back</button>
-          <button class="btn-primary" onclick="goToStep(5)" id="next4" disabled>Review & Pay →</button>
+          <button class="btn-primary" onclick="handleBooking()" id="next4" disabled>Book Session →</button>
         </div>
       </div>
 
-      <!-- PANEL 5: PAYMENT -->
-      <div class="booking-panel" id="panel5">
-        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:12px;">Review &
-          Pay</h3>
-        <p style="font-size:0.7rem;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:40px;">Complete your
-          booking with secure payment</p>
-        <div class="review-layout">
-          <div class="review-summary">
-            <h4 class="review-title">Booking Summary</h4>
-            <div class="review-row">
-              <div>
-                <div class="review-row-label">Service</div>
-                <div class="review-row-value" id="rv-service">—</div>
-              </div>
-            </div>
-            <div class="review-row">
-              <div>
-                <div class="review-row-label">Package</div>
-                <div class="review-row-value" id="rv-package">—</div>
-              </div>
-            </div>
-            <div class="review-row">
-              <div>
-                <div class="review-row-label">Date & Time</div>
-                <div class="review-row-value" id="rv-datetime">—</div>
-              </div>
-            </div>
-            <div class="review-row">
-              <div>
-                <div class="review-row-label">Client</div>
-                <div class="review-row-value" id="rv-client">—</div>
-              </div>
-            </div>
-            <div class="review-total">
-              <span class="review-total-label">Total Due</span>
-              <span class="review-total-amount" id="rv-total">—</span>
-            </div>
-          </div>
-          <div class="payment-form">
-            <h4 class="payment-title">Secure Payment</h4>
-            <span class="payment-secure">256-bit SSL · Powered by Stripe</span>
-            <div class="form-group">
-              <label class="form-label">Cardholder Name</label>
-              <input class="form-input" type="text" id="cardName" placeholder="Name on card">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Card Details</label>
-              <div id="card-element"></div>
-              <div id="card-errors"></div>
-            </div>
-            <div class="pay-btn-wrap">
-              <button class="btn-primary" id="payBtn" onclick="handlePayment()" style="width:100%;padding:18px;">
-                Confirm & Pay
-              </button>
-              <div class="pay-spinner" id="paySpinner"></div>
-            </div>
-          </div>
-        </div>
-        <div class="booking-nav">
-          <button class="btn-ghost" onclick="goToStep(4)" style="color:var(--text-muted);">← Back</button>
-          <div></div>
-        </div>
-      </div>
 
       <!-- SUCCESS -->
       <div id="success-panel">
@@ -1451,9 +1385,6 @@
 
   <script>
     // ── INIT ────────────────────────────────────────────────
-    // Stripe elements are still needed for the card input, but the full Stripe object is not used for this simplified payment
-    const elements = Stripe('pk_test_TYooMQauvdEDq542VcVEqKDfB').elements({ appearance: { theme: 'night', variables: { colorPrimary: '#C9A84C', colorBackground: '#161616', colorText: '#f0ede8', colorDanger: '#e05555', fontFamily: 'Montserrat, sans-serif', borderRadius: '0px' } } });
-    const cardElement = elements.create('card', { style: { base: { color: '#f0ede8', fontFamily: '"Montserrat", sans-serif', fontSize: '14px', '::placeholder': { color: '#7a7670' } } } });
 
     // ── STATE ────────────────────────────────────────────────
     const state = {
@@ -1490,14 +1421,6 @@
     const unavailTimes = ['11:00 AM', '3:00 PM'];
 
     // ── STRIPE MOUNT ─────────────────────────────────────────
-    function mountCard() {
-      setTimeout(() => {
-        cardElement.mount('#card-element');
-        cardElement.on('focus', () => document.getElementById('card-element').classList.add('focused'));
-        cardElement.on('blur', () => document.getElementById('card-element').classList.remove('focused'));
-        cardElement.on('change', e => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
-      }, 100);
-    }
 
     // ── SERVICE ───────────────────────────────────────────────
     function selectService(el, name, price) {
@@ -1590,7 +1513,7 @@
 
     // ── STEP NAV ──────────────────────────────────────────────
     function goToStep(n) {
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 4; i++) {
         document.getElementById(`panel${i}`).classList.remove('active');
         const s = document.getElementById(`step${i}`);
         s.classList.remove('active', 'done');
@@ -1600,25 +1523,15 @@
       document.getElementById(`panel${n}`).classList.add('active');
       if (n === 2) renderPackages();
       if (n === 3) { renderCalendar(); renderTimes(); }
-      if (n === 5) { populateReview(); }
       document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function populateReview() {
-      document.getElementById('rv-service').textContent = state.service || '—';
-      document.getElementById('rv-package').textContent = `${state.packageName} — ${state.packagePrice}`;
-      document.getElementById('rv-datetime').textContent = `${state.dateFormatted || '—'} at ${state.time || '—'}`;
-      const fn = document.getElementById('fname').value, ln = document.getElementById('lname').value;
-      document.getElementById('rv-client').textContent = `${fn} ${ln}`.trim();
-      document.getElementById('rv-total').textContent = state.packagePrice;
-    }
 
-    // ── PAYMENT ───────────────────────────────────────────────
-    // ── PAYMENT ───────────────────────────────────────────────
-    async function handlePayment() {
-      const btn = document.getElementById('payBtn');
-      const spinner = document.getElementById('paySpinner');
-      btn.disabled = true; spinner.style.display = 'block';
+    // ── BOOKING SUBMISSION ──────────────────────────────────
+    async function handleBooking() {
+      const btn = document.getElementById('next4');
+      btn.disabled = true;
+      btn.textContent = 'Booking...';
 
       try {
         const bookingData = {
@@ -1632,8 +1545,7 @@
           client_email: document.getElementById('email').value,
           client_phone: document.getElementById('phone').value,
           project_brief: document.getElementById('brief').value,
-          referral_source: document.getElementById('source').value,
-          stripe_payment_id: 'manual_payment_' + Date.now(), // Simplified for this demo
+          referral_source: document.getElementById('source').value
         };
 
         const res = await fetch('/api/bookings/submit', {
@@ -1649,13 +1561,14 @@
 
       } catch (err) {
         showToast(err.message, true);
-        btn.disabled = false; spinner.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Book Session →';
       }
     }
 
     function showSuccess(ref) {
       document.getElementById('stepsBar').style.display = 'none';
-      for (let i = 1; i <= 5; i++) document.getElementById(`panel${i}`).style.display = 'none';
+      for (let i = 1; i <= 4; i++) document.getElementById(`panel${i}`).style.display = 'none';
       const s = document.getElementById('success-panel');
       s.style.display = 'block';
       document.getElementById('bookingRef').textContent = `REF: ${ref}`;
@@ -1665,7 +1578,7 @@
     function resetBooking() {
       document.getElementById('stepsBar').style.display = 'flex';
       document.getElementById('success-panel').style.display = 'none';
-      for (let i = 1; i <= 5; i++) document.getElementById(`panel${i}`).style.display = '';
+      for (let i = 1; i <= 4; i++) document.getElementById(`panel${i}`).style.display = '';
       Object.keys(state).forEach(k => { if (!['currentMonth', 'currentYear'].includes(k)) state[k] = null; });
       goToStep(1);
       document.querySelectorAll('.service-option').forEach(e => e.classList.remove('selected'));
