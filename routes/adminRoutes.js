@@ -20,7 +20,7 @@ router.get('/bookings', async (req, res) => {
 router.post('/bookings/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
-        const booking = await Booking.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const booking = await Booking.findOneAndUpdate({ ref: req.params.id }, { status }, { new: true });
 
         if (!booking) {
             return res.status(404).json({ error: 'Booking not found' });

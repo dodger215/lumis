@@ -6,7 +6,8 @@ const pricingSchema = new mongoose.Schema({
     service: { type: String, required: true },
     package_name: { type: String, required: true },
     price: { type: Number, required: true },
-    updated_at: { type: Date, default: Date.now }
+}, {
+    id: false
 });
 
 // Unique index for service and package_name

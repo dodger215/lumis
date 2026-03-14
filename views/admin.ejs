@@ -1082,22 +1082,42 @@
 
     async function doLogin() {
       const email = document.getElementById('loginEmail').value;
-      const pass = document.getElementById('loginPass').value;
+      const password = document.getElementById('loginPass').value;
       const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
 
-      if (email === 'admin@lumis.studio' && pass === 'admin123') {
-        localStorage.setItem('adminSession', 'true');
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('adminName').textContent = 'Admin';
-        document.getElementById('adminEmailEl').textContent = email;
-        loadAllData();
-      } else {
-        err.textContent = 'Invalid credentials. Use admin@lumis.studio / admin123';
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      err.textContent = '';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+          localStorage.setItem('adminSession', 'true');
+          localStorage.setItem('adminToken', result.token);
+          document.getElementById('loginPage').style.display = 'none';
+          document.getElementById('adminName').textContent = result.admin.name;
+          document.getElementById('adminEmailEl').textContent = result.admin.email;
+          loadAllData();
+        } else {
+          err.textContent = result.error || 'Invalid credentials';
+        }
+      } catch (e) {
+        err.textContent = 'Connection error. Please try again.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In →';
       }
     }
 
     async function doLogout() {
       localStorage.removeItem('adminSession');
+      localStorage.removeItem('adminToken');
       document.getElementById('loginPage').style.display = 'flex';
     }
 
@@ -1108,10 +1128,19 @@
     }
 
     async function loadAllData() {
+      const token = localStorage.getItem('adminToken');
+      if (!token) { doLogout(); return; }
+
       try {
-        const res = await fetch('/api/admin/bookings');
+        const res = await fetch('/api/admin/bookings', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.status === 401) { doLogout(); return; }
+
         const data = await res.json();
-        allBookings = data || [];
+        allBookings = Array.isArray(data) ? data : [];
+
         const pending = allBookings.filter(b => b.status === 'pending').length;
         document.getElementById('pendingBadge').textContent = pending;
         renderDashboard(); renderBookingsTable(); renderRevenuePage(); renderPricingPage();
@@ -1171,7 +1200,7 @@
     }
 
     function bookingRowHTML(b) {
-      return `<tr onclick="openModal('${b.id}')">
+      return `<tr onclick="openModal('${b.ref}')">
     <td class="td-ref">${b.ref || '—'}</td>
     <td class="td-client"><strong>${b.client_name || '—'}</strong><span>${b.client_email || ''}</span></td>
     <td>${b.service || '—'} · ${b.package_name || '—'}</td>
@@ -1179,8 +1208,8 @@
     <td class="td-amount">${b.package_price || '—'}</td>
     <td><span class="badge ${b.status || 'pending'}">${b.status || 'pending'}</span></td>
     <td onclick="event.stopPropagation()"><div class="action-btns">
-      ${b.status === 'pending' ? `<button class="action-btn confirm" onclick="updateStatus('${b.id}','confirmed')">✓</button><button class="action-btn reject" onclick="updateStatus('${b.id}','rejected')">✕</button>` : ''}
-      ${b.status === 'confirmed' ? `<button class="action-btn" onclick="updateStatus('${b.id}','completed')">Done</button>` : ''}
+      ${b.status === 'pending' ? `<button class="action-btn confirm" onclick="updateStatus('${b.ref}','confirmed')">✓</button><button class="action-btn reject" onclick="updateStatus('${b.ref}','rejected')">✕</button>` : ''}
+      ${b.status === 'confirmed' ? `<button class="action-btn" onclick="updateStatus('${b.ref}','completed')">Done</button>` : ''}
     </div></td>
   </tr>`;
     }
@@ -1201,10 +1230,10 @@
     function setFilter(f, el) { currentFilter = f; document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active')); el.classList.add('active'); renderBookingsTable(); }
     function filterBookings(q) { currentSearch = q; renderBookingsTable(); }
 
-    async function updateStatus(id, status) {
+    async function updateStatus(ref, status) {
       const token = localStorage.getItem('adminToken');
       try {
-        const res = await fetch(`/api/admin/bookings/${id}/status`, {
+        const res = await fetch(`/api/admin/bookings/${ref}/status`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1226,8 +1255,8 @@
     }
 
     // MODAL
-    function openModal(id) {
-      const b = allBookings.find(x => x.id === id); if (!b) return;
+    function openModal(ref) {
+      const b = allBookings.find(x => x.ref === ref); if (!b) return;
       document.getElementById('modalTitle').textContent = b.ref || 'Booking Detail';
       document.getElementById('modalBody').innerHTML = [
         ['Service', b.service || '—'], ['Package', b.package_name || '—'], ['Amount', b.package_price || '—'],
@@ -1238,8 +1267,8 @@
         ['Booked', b.created_at ? new Date(b.created_at).toLocaleString() : '—'],
       ].map(([k, v]) => `<div class="modal-row"><div class="modal-key">${k}</div><div class="modal-val">${v}</div></div>`).join('');
       let actions = '';
-      if (b.status === 'pending') actions = `<button class="btn-sm" style="border-color:var(--green);color:var(--green);" onclick="updateStatus('${b.id}','confirmed')">✓ Confirm</button><button class="btn-sm" style="border-color:var(--red);color:var(--red);" onclick="updateStatus('${b.id}','rejected')">✕ Reject</button>`;
-      if (b.status === 'confirmed') actions = `<button class="btn-sm gold" onclick="updateStatus('${b.id}','completed')">Mark Completed</button>`;
+      if (b.status === 'pending') actions = `<button class="btn-sm" style="border-color:var(--green);color:var(--green);" onclick="updateStatus('${b.ref}','confirmed')">✓ Confirm</button><button class="btn-sm" style="border-color:var(--red);color:var(--red);" onclick="updateStatus('${b.ref}','rejected')">✕ Reject</button>`;
+      if (b.status === 'confirmed') actions = `<button class="btn-sm gold" onclick="updateStatus('${b.ref}','completed')">Mark Completed</button>`;
       document.getElementById('modalActions').innerHTML = actions;
       document.getElementById('modalOverlay').classList.add('open');
     }
