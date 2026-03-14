@@ -931,7 +931,7 @@
       <div class="page active" id="page-dashboard">
         <div class="kpi-grid">
           <div class="kpi-card"><span class="kpi-label">Total Revenue</span>
-            <div class="kpi-value gold" id="kpi-revenue">$0</div>
+            <div class="kpi-value gold" id="kpi-revenue">GHc0</div>
           </div>
           <div class="kpi-card"><span class="kpi-label">Total Bookings</span>
             <div class="kpi-value" id="kpi-bookings">0</div>
@@ -1014,13 +1014,13 @@
       <div class="page" id="page-revenue">
         <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
           <div class="kpi-card"><span class="kpi-label">Total Collected</span>
-            <div class="kpi-value gold" id="rev-total">$0</div>
+            <div class="kpi-value gold" id="rev-total">GHc0</div>
           </div>
           <div class="kpi-card"><span class="kpi-label">This Month</span>
-            <div class="kpi-value" id="rev-month">$0</div>
+            <div class="kpi-value" id="rev-month">GHc0</div>
           </div>
           <div class="kpi-card"><span class="kpi-label">Avg Booking Value</span>
-            <div class="kpi-value" id="rev-avg">$0</div>
+            <div class="kpi-value" id="rev-avg">GHc0</div>
           </div>
         </div>
         <div class="chart-card" style="margin-bottom:32px;">
@@ -1120,7 +1120,7 @@
       }
     }
 
-    function fmtMoney(cents) { return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+    function fmtMoney(cents) { return 'GHc' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
     function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'; }
 
     // DASHBOARD
@@ -1274,7 +1274,7 @@
         <div class="pricing-pkg">
           <span class="pricing-pkg-name">${pkg}</span>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1.2rem;">$</span>
+            <span style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1.2rem;">GHc</span>
             <input class="pricing-pkg-input" type="number" id="price_${svc.replace(' ', '_')}_${pkg}" value="${defaultPrices[svc]?.[pkg] || 0}">
           </div>
         </div>`).join('')}
